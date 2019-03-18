@@ -18,8 +18,9 @@ contract HomeBridgeErcToNative is EternalStorage, BasicBridge, BasicHomeBridge, 
     event AmountLimitExceeded(address recipient, uint256 value, bytes32 transactionHash);
     event BridgeFunded(address funder, uint256 value);
 
-    modifier onlyWithinUserLimit() {
-        require(limit(msg.sender) <= limit, "Limit crossed");
+    modifier onlyWithinUserLimit(uint _value) {
+        require(userLimit[msg.sender] <= limit, "Limit crossed");
+        require(_value <= (limit.sub(userLimit[msg.sender])),"Limit crossed with current value");
         _;
     }
 
@@ -86,7 +87,7 @@ contract HomeBridgeErcToNative is EternalStorage, BasicBridge, BasicHomeBridge, 
     }
 
     /// @notice Transfer coins.
-    function onExecuteAffirmation(address _recipient, uint256 _value) internal onlyWithinUserLimit returns(bool) {
+    function onExecuteAffirmation(address _recipient, uint256 _value) internal onlyWithinUserLimit(_value) returns(bool) {
         require(_value <= address(this).balance);
         setTotalExecutedPerDay(getCurrentDay(), totalExecutedPerDay(getCurrentDay()).add(_value));
 
