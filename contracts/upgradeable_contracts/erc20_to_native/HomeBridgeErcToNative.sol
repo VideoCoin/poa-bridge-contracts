@@ -12,8 +12,16 @@ import "../OverdrawManagement.sol";
 
 contract HomeBridgeErcToNative is EternalStorage, BasicBridge, BasicHomeBridge, OverdrawManagement {
 
+    uint public limit = 1000000000000000000;
+    mapping(address => uint256) public userLimit;
+
     event AmountLimitExceeded(address recipient, uint256 value, bytes32 transactionHash);
     event BridgeFunded(address funder, uint256 value);
+
+    modifier onlyWithinUserLimit() {
+        require(limit(msg.sender) <= limit, "Limit crossed");
+        _;
+    }
 
     /// @notice Fund the bridge. The funds are used for paying out conversions from the ERC20 token
     function () public payable {
@@ -60,7 +68,7 @@ contract HomeBridgeErcToNative is EternalStorage, BasicBridge, BasicHomeBridge, 
         return isInitialized();
     }
 
-    function withdrawAll() public onlyOwner{
+    function withdrawAll() public onlyOwner {
         uint256 balance = address(this).balance;
         msg.sender.transfer(balance);
     }
@@ -78,10 +86,11 @@ contract HomeBridgeErcToNative is EternalStorage, BasicBridge, BasicHomeBridge, 
     }
 
     /// @notice Transfer coins.
-    function onExecuteAffirmation(address _recipient, uint256 _value) internal returns(bool) {
+    function onExecuteAffirmation(address _recipient, uint256 _value) internal onlyWithinUserLimit returns(bool) {
         require(_value <= address(this).balance);
         setTotalExecutedPerDay(getCurrentDay(), totalExecutedPerDay(getCurrentDay()).add(_value));
 
+        userLimit[_recipient].add(_value);
         _recipient.transfer(_value);
 
         return true;
@@ -103,5 +112,9 @@ contract HomeBridgeErcToNative is EternalStorage, BasicBridge, BasicHomeBridge, 
         setOutOfLimitAmount(outOfLimitAmount().add(_value));
         setTxAboveLimits(_recipient, _value, _txHash);
         emit AmountLimitExceeded(_recipient, _value, _txHash);
+    }
+
+    function changeLimit(uint _newLimit) public onlyOwner {
+        limit = _newLimit;
     }
 }
