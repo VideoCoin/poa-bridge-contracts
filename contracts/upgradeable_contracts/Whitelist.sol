@@ -17,8 +17,8 @@ contract Whitelist is Ownable {
     /**
     * @dev Throws if called by any account that's not whitelisted.
     */
-    modifier onlyWhitelisted() {
-        require(boolStorage[keccak256(abi.encodePacked("whitelist", msg.sender))], "Only whitelisted address can perform that acction");
+    modifier onlyWhitelisted(address _addr) {
+        require(boolStorage[keccak256(abi.encodePacked("whitelist", _addr))], "Only whitelisted address can perform that acction");
         _;
     }
 
@@ -41,7 +41,7 @@ contract Whitelist is Ownable {
     * @return true if at least one address was added to the whitelist, 
     * false if all addresses were already in the whitelist  
     */
-    function addAddressesToWhitelist(address[] memory addrs) onlyOwner public returns(bool success) {
+    function addAddressesToWhitelist(address[] memory addrs) public onlyOwner returns(bool success) {
         for (uint256 i = 0; i < addrs.length; i++) {
             if (addAddressToWhitelist(addrs[i])) {
                 success = true;
