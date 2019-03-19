@@ -11,8 +11,9 @@ import "../OverdrawManagement.sol";
 import "../Whitelist.sol";
 
 contract HomeBridgeErcToNative is EternalStorage, BasicBridge, BasicHomeBridge, OverdrawManagement, Whitelist {
+    using SafeMath for uint256;
 
-    uint public limit;
+    uint256 public limit;
     mapping(address => uint256) public userLimit;
 
     event AmountLimitExceeded(address recipient, uint256 value, bytes32 transactionHash);
@@ -84,11 +85,11 @@ contract HomeBridgeErcToNative is EternalStorage, BasicBridge, BasicHomeBridge, 
     }
 
     /// @notice Transfer coins.
-    function onExecuteAffirmation(address _recipient, uint256 _value) internal onlyWithinUserLimit(_value) onlyWhitelisted returns(bool) {
+    function onExecuteAffirmation(address _recipient, uint256 _value) internal onlyWithinUserLimit(_value) returns(bool) {
         require(_value <= address(this).balance);
         setTotalExecutedPerDay(getCurrentDay(), totalExecutedPerDay(getCurrentDay()).add(_value));
 
-        userLimit[_recipient].add(_value);
+        userLimit[_recipient] = userLimit[_recipient].add(_value);
         _recipient.transfer(_value);
 
         return true;
