@@ -8,11 +8,11 @@ import "../../ERC677Receiver.sol";
 import "../BasicHomeBridge.sol";
 import "../ERC677Bridge.sol";
 import "../OverdrawManagement.sol";
+import "../Whitelist.sol";
 
+contract HomeBridgeErcToNative is EternalStorage, BasicBridge, BasicHomeBridge, OverdrawManagement, Whitelist {
 
-contract HomeBridgeErcToNative is EternalStorage, BasicBridge, BasicHomeBridge, OverdrawManagement {
-
-    uint public limit = 1000000000000000000;
+    uint public limit;
     mapping(address => uint256) public userLimit;
 
     event AmountLimitExceeded(address recipient, uint256 value, bytes32 transactionHash);
@@ -59,7 +59,7 @@ contract HomeBridgeErcToNative is EternalStorage, BasicBridge, BasicHomeBridge, 
         uintStorage[keccak256(abi.encodePacked("requiredBlockConfirmations"))] = _requiredBlockConfirmations;
         uintStorage[keccak256(abi.encodePacked("executionDailyLimit"))] = _foreignDailyLimit;
         uintStorage[keccak256(abi.encodePacked("executionMaxPerTx"))] = _foreignMaxPerTx;
-
+        limit = 1000000000000000000;
         setOwner(_owner);
         setInitialize(true);
 
@@ -84,7 +84,7 @@ contract HomeBridgeErcToNative is EternalStorage, BasicBridge, BasicHomeBridge, 
     }
 
     /// @notice Transfer coins.
-    function onExecuteAffirmation(address _recipient, uint256 _value) internal onlyWithinUserLimit(_value) returns(bool) {
+    function onExecuteAffirmation(address _recipient, uint256 _value) internal onlyWithinUserLimit(_value) onlyWhitelisted returns(bool) {
         require(_value <= address(this).balance);
         setTotalExecutedPerDay(getCurrentDay(), totalExecutedPerDay(getCurrentDay()).add(_value));
 

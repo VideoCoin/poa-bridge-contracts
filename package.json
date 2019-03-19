@@ -7,6 +7,7 @@
     "test": "scripts/test.sh",
     "deploy": "truffle migrate --reset --network $NETWORK",
     "compile": "truffle compile",
+    "truffle": "truffle",
     "flatten": "bash flatten.sh",
     "watch-tests": "./node_modules/.bin/nodemon ./node_modules/.bin/truffle test --network test"
   },
