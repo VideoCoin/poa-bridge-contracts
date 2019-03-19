@@ -10,7 +10,6 @@ import "./Ownable.sol";
  * @dev This simplifies the implementation of "user permissions".
  */
 contract Whitelist is Ownable {
-    mapping(address => bool) public whitelist;
     
     event WhitelistedAddressAdded(address addr);
     event WhitelistedAddressRemoved(address addr);
@@ -58,7 +57,7 @@ contract Whitelist is Ownable {
     */
     function removeAddressFromWhitelist(address addr) public onlyOwner returns(bool success) {
         if (boolStorage[keccak256(abi.encodePacked("whitelist", addr))]) {
-            whitelist[addr] = false;
+            boolStorage[keccak256(abi.encodePacked("whitelist", addr))] = false;
             emit WhitelistedAddressRemoved(addr);
             success = true;
         }
@@ -75,6 +74,19 @@ contract Whitelist is Ownable {
             if(removeAddressFromWhitelist(addrs[i])) {
                 success = true;
             }
+        }
+    }
+
+    /**
+    * @dev checks if address is whitelisted
+    * @param addr address
+    * @return true if address is whitelisted, false if not
+    */
+    function isWhitelisted(address addr) public view returns(bool whitelisted) {
+        if (boolStorage[keccak256(abi.encodePacked("whitelist", addr))]) {
+            whitelisted = true;
+        } else {
+            whitelisted = false;
         }
     }
 }
