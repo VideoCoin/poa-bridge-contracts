@@ -1,5 +1,21 @@
+const Wallet = require('ethereumjs-wallet');
+const HDWalletProvider = require("truffle-hdwallet-provider");
+
+const vdcUrl = 'http://admin:LivePlanetS3cr3t@rpc.videocoin.network';
+const keyfile = require('./manager.json');
+
+const wallet = Wallet.fromV3(keyfile, 'manager');
+const privateKeys = [wallet.getPrivateKey().toString('hex')];
+const provider = new HDWalletProvider(privateKeys, vdcUrl);
+
 module.exports = {
   networks: {
+    alpha: {
+      provider: () => provider,
+      network_id: '*',   // This network is yours, in the cloud.
+      // production: true    // Treats this network as if it was a public net. (default: false)
+      gas: 6712388,
+    },
     development: {
       host: "localhost",
       port: 8545,

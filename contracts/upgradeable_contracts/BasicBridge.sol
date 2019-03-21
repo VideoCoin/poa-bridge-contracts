@@ -56,6 +56,14 @@ contract BasicBridge is EternalStorage, Validatable, Ownable, OwnedUpgradeabilit
         uintStorage[keccak256(abi.encodePacked("totalExecutedPerDay", _day))] = _value;
     }
 
+    function setTotalExecutedPerDayPerUser(uint256 _day, address _addr, uint256 _value) internal {
+        uintStorage[keccak256(abi.encodePacked("totalExecutedPerDay", _addr, _day))] = _value;
+    }
+
+    function totalExecutedPerDayPerUser(uint256 _day, address _addr) public view returns(uint256) {
+        return uintStorage[keccak256(abi.encodePacked("totalExecutedPerDay", _addr, _day))];
+    }
+
     function totalExecutedPerDay(uint256 _day) public view returns(uint256) {
         return uintStorage[keccak256(abi.encodePacked("totalExecutedPerDay", _day))];
     }
