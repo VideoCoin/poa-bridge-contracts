@@ -14,7 +14,7 @@ const foreignMaxPerTx = halfEther
 
 
 contract('HomeBridge_ERC20_to_Native', async (accounts) => {
-  let homeContract, validatorContract, blockRewardContract, authorities, owner;
+  let homeContract, validatorContract, authorities, owner;
   before(async () => {
     validatorContract = await BridgeValidators.new()
     authorities = [accounts[1]]
