@@ -13,8 +13,6 @@ import "../Whitelist.sol";
 contract HomeBridgeErcToNative is EternalStorage, BasicBridge, BasicHomeBridge, OverdrawManagement, Whitelist {
     using SafeMath for uint256;
 
-    mapping(address => uint256) public userLimit;
-
     event AmountLimitExceeded(address recipient, uint256 value, bytes32 transactionHash);
     event BridgeFunded(address funder, uint256 value);
 
