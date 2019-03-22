@@ -16,12 +16,6 @@ contract HomeBridgeErcToNative is EternalStorage, BasicBridge, BasicHomeBridge, 
     event AmountLimitExceeded(address recipient, uint256 value, bytes32 transactionHash);
     event BridgeFunded(address funder, uint256 value);
 
-    modifier onlyWithinUserLimit(uint _value) {
-        require(totalExecutedPerUser(msg.sender) <= userLimit(), "Limit crossed");
-        require(_value <= (userLimit().sub(totalExecutedPerUser(msg.sender))), "Limit crossed with current value");
-        _;
-    }
-
     /// @notice Fund the bridge. The funds are used for paying out conversions from the ERC20 token
     function () public payable {
         require(msg.value > 0);
@@ -82,8 +76,17 @@ contract HomeBridgeErcToNative is EternalStorage, BasicBridge, BasicHomeBridge, 
         return uintStorage[keccak256(abi.encodePacked("totalBurntCoins"))];
     }
 
+    /// @notice Call user limit checks before calling super
+    function executeAffirmation(address recipient, uint256 value, bytes32 transactionHash) external {
+      if (affirmationWithinUserLimits(recipient, value)) {
+        super.executeAffirmation(recipient, value, transactionHash);
+      } else {
+          onFailedAffirmation(recipient, value, transactionHash);
+      }
+    }
+
     /// @notice Transfer coins.
-    function onExecuteAffirmation(address _recipient, uint256 _value) internal onlyWithinUserLimit(_value) onlyWhitelisted(_recipient) returns(bool) {
+    function onExecuteAffirmation(address _recipient, uint256 _value) internal onlyWhitelisted(_recipient) returns(bool) {
         require(_value <= address(this).balance);
 
         setTotalExecutedPerDay(getCurrentDay(), totalExecutedPerDay(getCurrentDay()).add(_value));
@@ -101,6 +104,14 @@ contract HomeBridgeErcToNative is EternalStorage, BasicBridge, BasicHomeBridge, 
 
     function affirmationWithinLimits(uint256 _amount) internal view returns(bool) {
         return withinExecutionLimit(_amount);
+    }
+    
+    /// @notice Check user max and daily limits before affirmation
+    function affirmationWithinUserLimits(address _recipient, uint256 _amount) internal view returns(bool) {
+      uint256 nextLimit = totalExecutedPerUser(_recipient).add(_amount);
+      uint256 nextDailyLimit = totalExecutedPerDayPerUser(getCurrentDay(), _recipient).add(_amount);
+      
+      return userLimit() > nextLimit && totalExecutedPerDayPerUser() > nextDailyLimit;
     }
 
     function onFailedAffirmation(address _recipient, uint256 _value, bytes32 _txHash) internal {
