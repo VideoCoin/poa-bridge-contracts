@@ -13,15 +13,14 @@ import "../Whitelist.sol";
 contract HomeBridgeErcToNative is EternalStorage, BasicBridge, BasicHomeBridge, OverdrawManagement, Whitelist {
     using SafeMath for uint256;
 
-    uint256 public limit;
     mapping(address => uint256) public userLimit;
 
     event AmountLimitExceeded(address recipient, uint256 value, bytes32 transactionHash);
     event BridgeFunded(address funder, uint256 value);
 
     modifier onlyWithinUserLimit(uint _value) {
-        require(userLimit[msg.sender] <= limit, "Limit crossed");
-        require(_value <= (limit.sub(userLimit[msg.sender])),"Limit crossed with current value");
+        require(totalExecutedPerUser(msg.sender) <= userLimit(), "Limit crossed");
+        require(_value <= (userLimit().sub(totalExecutedPerUser(msg.sender))), "Limit crossed with current value");
         _;
     }
 
@@ -60,7 +59,8 @@ contract HomeBridgeErcToNative is EternalStorage, BasicBridge, BasicHomeBridge, 
         uintStorage[keccak256(abi.encodePacked("requiredBlockConfirmations"))] = _requiredBlockConfirmations;
         uintStorage[keccak256(abi.encodePacked("executionDailyLimit"))] = _foreignDailyLimit;
         uintStorage[keccak256(abi.encodePacked("executionMaxPerTx"))] = _foreignMaxPerTx;
-        limit = 10000000000000000000;
+        uintStorage[keccak256(abi.encodePacked("limitPerUser"))] = 1e20;
+        uintStorage[keccak256(abi.encodePacked("userDailyLimit"))] = 1e19;
         setOwner(_owner);
         setInitialize(true);
 
@@ -89,10 +89,9 @@ contract HomeBridgeErcToNative is EternalStorage, BasicBridge, BasicHomeBridge, 
         require(_value <= address(this).balance);
 
         setTotalExecutedPerDay(getCurrentDay(), totalExecutedPerDay(getCurrentDay()).add(_value));
-        setTotalExecutedPerUser(getCurrentDay(), _recipient, totalExecutedPerUser(getCurrentDay(), _recipient).add(_value));
+        setTotalExecutedPerUser(_recipient, totalExecutedPerUser(_recipient).add(_value));
         setTotalExecutedPerDayPerUser(getCurrentDay(), _recipient, totalExecutedPerDayPerUser(getCurrentDay(), _recipient).add(_value));
 
-        userLimit[_recipient] = userLimit[_recipient].add(_value);
         _recipient.transfer(_value);
 
         return true;
@@ -114,9 +113,5 @@ contract HomeBridgeErcToNative is EternalStorage, BasicBridge, BasicHomeBridge, 
         setOutOfLimitAmount(outOfLimitAmount().add(_value));
         setTxAboveLimits(_recipient, _value, _txHash);
         emit AmountLimitExceeded(_recipient, _value, _txHash);
-    }
-
-    function changeLimit(uint _newLimit) public onlyOwner {
-        limit = _newLimit;
     }
 }

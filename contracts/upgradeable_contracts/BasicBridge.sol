@@ -15,6 +15,8 @@ contract BasicBridge is EternalStorage, Validatable, Ownable, OwnedUpgradeabilit
     event RequiredBlockConfirmationChanged(uint256 requiredBlockConfirmations);
     event DailyLimitChanged(uint256 newLimit);
     event ExecutionDailyLimitChanged(uint256 newLimit);
+    event UserLimitChanged(uint256 newLimit);
+    event UserDailyLimitChanged(uint256 newLimit);
 
     function getBridgeInterfacesVersion() public pure returns(uint64 major, uint64 minor, uint64 patch) {
         return (2, 2, 0);
@@ -68,12 +70,12 @@ contract BasicBridge is EternalStorage, Validatable, Ownable, OwnedUpgradeabilit
         return uintStorage[keccak256(abi.encodePacked("totalExecutedPerDay", _addr, _day))];
     }
 
-    function setTotalExecutedPerUser(uint256 _day, address _addr, uint256 _value) internal {
-        uintStorage[keccak256(abi.encodePacked("totalExecutedPerDay", _addr, _day))] = _value;
+    function setTotalExecutedPerUser(address _addr, uint256 _value) internal {
+        uintStorage[keccak256(abi.encodePacked("totalExecutedPerUser", _addr))] = _value;
     }
 
-    function totalExecutedPerUser(uint256 _day, address _addr) public view returns(uint256) {
-        return uintStorage[keccak256(abi.encodePacked("totalExecutedPerDay", _addr, _day))];
+    function totalExecutedPerUser(address _addr) public view returns(uint256) {
+        return uintStorage[keccak256(abi.encodePacked("totalExecutedPerUser", _addr))];
     }
 
     function minPerTx() public view returns(uint256) {
@@ -116,6 +118,24 @@ contract BasicBridge is EternalStorage, Validatable, Ownable, OwnedUpgradeabilit
 
     function executionDailyLimit() public view returns(uint256) {
         return uintStorage[keccak256(abi.encodePacked("executionDailyLimit"))];
+    }
+
+    function setUserDailyLimit(uint256 _userDailyLimit) public onlyOwner {
+        uintStorage[keccak256(abi.encodePacked("userDailyLimit"))] = _userDailyLimit;
+        emit UserDailyLimitChanged(_userDailyLimit);
+    }
+
+    function userDailyLimit() public view returns(uint256) {
+        return uintStorage[keccak256(abi.encodePacked("userDailyLimit"))];
+    }
+
+    function setUserLimit(uint256 _limit) public onlyOwner {
+        uintStorage[keccak256(abi.encodePacked("limitPerUser"))] = _limit;
+        emit UserLimitChanged(_limit);
+    }
+
+    function userLimit() public view returns(uint256) {
+        return uintStorage[keccak256(abi.encodePacked("limitPerUser"))];
     }
 
     function setExecutionMaxPerTx(uint256 _maxPerTx) external onlyOwner {
