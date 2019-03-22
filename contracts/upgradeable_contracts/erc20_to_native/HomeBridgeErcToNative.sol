@@ -87,10 +87,10 @@ contract HomeBridgeErcToNative is EternalStorage, BasicBridge, BasicHomeBridge, 
     /// @notice Transfer coins.
     function onExecuteAffirmation(address _recipient, uint256 _value) internal onlyWithinUserLimit(_value) onlyWhitelisted(_recipient) returns(bool) {
         require(_value <= address(this).balance);
-        // require(withinLimit(_value));
+
         setTotalExecutedPerDay(getCurrentDay(), totalExecutedPerDay(getCurrentDay()).add(_value));
+        setTotalExecutedPerUser(getCurrentDay(), _recipient, totalExecutedPerUser(getCurrentDay(), _recipient).add(_value));
         setTotalExecutedPerDayPerUser(getCurrentDay(), _recipient, totalExecutedPerDayPerUser(getCurrentDay(), _recipient).add(_value));
-        // setTotalSpentPerDay(getCurrentDay(), totalSpentPerDay(getCurrentDay()).add(_value));
 
         userLimit[_recipient] = userLimit[_recipient].add(_value);
         _recipient.transfer(_value);
